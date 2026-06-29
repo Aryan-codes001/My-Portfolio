@@ -46,12 +46,41 @@ export default function Contact() {
       return;
     }
 
+    // Check if the API key is configured
+    const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY;
+    if (!accessKey || accessKey === "YOUR_WEB3FORMS_ACCESS_KEY") {
+      setStatus("error");
+      setErrorMsg("Web3Forms Access Key is not configured. Please add your key in .env.local.");
+      return;
+    }
+
     try {
-      // Simulate API email dispatch
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setStatus("success");
-      setFormData({ name: "", email: "", message: "" });
-    } catch {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          access_key: accessKey,
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+          subject: `New Portfolio Message from ${formData.name}`,
+          from_name: "Portfolio Contact Form",
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setStatus("success");
+        setFormData({ name: "", email: "", message: "" });
+      } else {
+        setStatus("error");
+        setErrorMsg(result.message || "Failed to send message. Please try again.");
+      }
+    } catch (err) {
       setStatus("error");
       setErrorMsg("Something went wrong. Please check your network and try again.");
     }
